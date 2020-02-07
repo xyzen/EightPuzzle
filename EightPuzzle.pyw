@@ -1,6 +1,6 @@
 import tkinter as tk
 import tkinter.font as font
-import EightPuzzleSolver as solver
+from EightPuzzleSolver import Solver
 
 class EightPuzzle(tk.Tk):
     
@@ -8,6 +8,11 @@ class EightPuzzle(tk.Tk):
         (8, 6, 7),
         (2, 5, 4),
         (3, 0, 1)
+    )
+    solved = (
+        (1, 2, 3),
+        (4, 5, 6),
+        (7, 8, 0),
     )
     
     def __init__(self, icon = None, state = default):
@@ -17,13 +22,15 @@ class EightPuzzle(tk.Tk):
         self.state = self.default
         self.buttons=[]
         self.setButtons()
-        self.solution = tk.Label(self, text=solver.AStarSearch(state))
+
+        self.solver = Solver(self, self.solved)
+        self.solution = tk.Label(self, text=self.solver.AStarSearch(self.state))
         self.solution.grid(row = 4, columnspan = 3)
         
-    def findZero(self):
+    def findZero(self, state):
         for i in range(3):
             for j in range(3):
-                if self.state[i][j] == 0:
+                if state[i][j] == 0:
                     return i, j
         
     def setState(self, state):
@@ -46,17 +53,16 @@ class EightPuzzle(tk.Tk):
                 )
                 self.buttons[row][col].grid(row=row, column=col)
                 
-    def move(self, row, col):
-        row_e, col_e = self.findZero()
+    def move(self, state, row, col):
+        row_e, col_e = self.findZero(state)
         if abs(row - row_e) + abs(col - col_e) != 1:
             return
-        label = self.state[row][col]
-        if label == 0:
-            return
-        new_state = [list(row) for row in self.state]
+        label = state[row][col]
+        new_state = [list(row) for row in state]
         new_state[row_e][col_e] = label
         new_state[row][col] = 0
-        self.state = tuple([tuple(row) for row in new_state])
+        state = tuple([tuple(row) for row in new_state])
+        return state
         
     def refresh(self):
         for row in range(3):
@@ -68,12 +74,14 @@ class EightPuzzle(tk.Tk):
                 )
                 
     def onClick(self, row, col):
-        self.move(row, col)
-        self.refresh()
-        self.search()
+        new_state = self.move(self.state, row, col)
+        if new_state:
+            self.state = new_state
+            self.refresh()
+            self.search()
 
     def search(self):
-        msg = solver.AStarSearch(self.state)
+        msg = self.solver.AStarSearch(self.state)
         if msg == "":
             msg = "Solved"
         self.solution.config(text=msg)
